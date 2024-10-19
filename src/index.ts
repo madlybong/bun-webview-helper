@@ -1,22 +1,46 @@
 import _ from "lodash";
 import { SizeHint } from "webview-bun";
 
-// console.log("Hello via Bun!");
+export interface WindowConfig {
+  width: Number;
+  height: Number;
+  hint?: SizeHint;
+  title?: string;
+  html?: string | undefined;
+  navigationUrl?: string | undefined;
+  actions?: { [K: string]: Function };
+}
 
-export default () =>
-  (
-    width: Number = 800,
-    height: Number = 600,
-    hint: SizeHint = SizeHint.MIN,
-    title: string = "New Window",
-    html: string | undefined = undefined,
-    url: string | undefined = undefined,
-    actions?: { [K: string]: Function }
-  ): Worker => {
-    const bindMethods = _.map(actions, (fn, key) => {
+const defaultConfig: WindowConfig = {
+  width: 800,
+  height: 600,
+  hint: SizeHint.NONE,
+  title: "New Window",
+  html: undefined,
+  navigationUrl: undefined,
+  actions: {},
+};
+
+// { width }: { width: Number } = { width: 800 },
+// { height }: { height: Number } = { height: 600 },
+// { hint }: { hint: SizeHint } = { hint: SizeHint.NONE },
+// { title }: { title: string } = { title: "New Window" },
+// { html }: { html: string | undefined } = { html: undefined },
+// { navigationUrl }: { navigationUrl: string | undefined } = {
+//   navigationUrl: undefined,
+// },
+// { actions }: { actions?: { [K: string]: Function } } = {}
+
+export async function wvWorker(
+  { config }: { config: WindowConfig } = { config: defaultConfig }
+): Promise<Worker | Error> {
+  try {
+    // console.log("Creating window");
+
+    const bindMethods = _.map(config?.actions, (fn, key) => {
       return `wv.bind("${key}", ${fn});`;
     });
-    console.table(bindMethods);
+    // console.table(bindMethods);
     const blob = new Blob(
       _.flatten(
         _.concat(
@@ -25,16 +49,16 @@ export default () =>
             `import { SizeHint, Webview } from "webview-bun";`,
             `import _ from "lodash";`,
             `const wv = new Webview(true, {
-                width: ${width},
-                height: ${height},
-                hint: ${hint},
-            });`,
+              width: ${config?.width},
+              height: ${config?.height},
+              hint: ${config?.hint},
+          });`,
           ],
           _.isArray(bindMethods) ? bindMethods : [],
           [
-            `wv.title = '${title}';`,
-            `wv.setHTML('${html}');`,
-            `wv.navigate('${url}');`,
+            `wv.title = '${config?.title || "New Window"}';`,
+            `wv.setHTML('${config?.html}');`,
+            `wv.navigate('${config?.navigationUrl}');`,
             `wv.run();`,
           ]
         )
@@ -53,7 +77,11 @@ export default () =>
       console.log("Worker error.", error);
     });
     return worker;
-  };
+  } catch (error: any) {
+    console.error(error);
+    return error;
+  }
+}
 
 ////////////////////////////////////////////////////////
 //// Check if the thread in blocking ...................
