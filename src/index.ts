@@ -33,7 +33,7 @@ const defaultConfig: WindowConfig = {
 
 export async function wvWorker(
   { config }: { config: WindowConfig } = { config: defaultConfig }
-): Promise<Worker | Error> {
+): Promise<Worker> {
   try {
     // console.log("Creating window");
 
@@ -78,7 +78,6 @@ export async function wvWorker(
     });
     return worker;
   } catch (error: any) {
-    console.error(error);
     return error;
   }
 }

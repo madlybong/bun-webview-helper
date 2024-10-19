@@ -4,6 +4,7 @@ const buildLib = await Bun.build({
   outdir: "./dist",
   external: ["lodash"],
   plugins: [],
+  minify: true,
   target: "bun",
 });
 
